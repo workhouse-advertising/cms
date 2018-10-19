@@ -6,6 +6,7 @@ use Statamic\API\Arr;
 use Statamic\API\Config;
 use Statamic\API\Helper;
 use Statamic\View\Modify;
+use Statamic\View\Antlers\Directive;
 use Statamic\Exceptions\ParsingException;
 use Statamic\Exceptions\ModifierException;
 use Statamic\Contracts\Data\Taxonomies\Term;
@@ -43,6 +44,8 @@ class Parser
     protected $conditionalData = [];
     protected $conditionalNotRegex = '';
     protected $conditionalExistsRegex = '';
+
+    protected $directiveRegex = '';
 
     protected static $extractions = [
         'noparse' => [],
@@ -84,6 +87,8 @@ class Parser
         if (! $allowPhp) {
             $text = str_replace(['<?php'], ['&lt;?php'], $text);
         }
+
+        $text = $this->parseDirectives($text, $data);
 
         // <statamic>
         // reverse the order of no-parse and commenting
@@ -131,6 +136,7 @@ class Parser
         if ($this->regexSetup) {
             return;
         }
+
         $glue = preg_quote($this->scopeGlue, '/');
 
         // <statamic>
@@ -165,6 +171,8 @@ class Parser
         $this->conditionalExistsRegex = '/(\s+|^)exists\s+('.$this->variableRegex.')(\s+|$)/ms';
         $this->conditionalNotRegex = '/(\s+|^)not(\s+|$)/ms';
 
+        $this->directiveRegex = '/\B@(@?\w+(?:\w+)?)\(([^)]+)\)/';
+
         $this->regexSetup = true;
 
         // This is important, it's pretty unclear by the documentation
@@ -185,6 +193,24 @@ class Parser
         $this->setupRegex();
 
         return preg_replace('/\{\{#.*?#\}\}/s', '', $text);
+    }
+
+
+    public function parseDirectives($text, $data)
+    {
+        /**
+        * $matches[0] is the raw string match
+        * $matches[1] is the directive name
+        * $matches[2] is the directive expression
+        */
+        if (preg_match_all($this->directiveRegex, $text, $matches, PREG_SET_ORDER)) {
+            foreach ($matches as $match) {
+                $replacement = Directive::handle($match[1], $match[2], $data);
+                $text = preg_replace('/' . preg_quote($match[0], '/') . '/m', addcslashes($replacement, '\\$'), $text, 1);
+            }
+        }
+
+         return $text;
     }
 
     /**
