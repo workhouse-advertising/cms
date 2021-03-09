@@ -34,7 +34,11 @@ class Cache
         $response = $next($request);
 
         if ($this->shouldBeCached($request, $response)) {
-            $this->cacher->cachePage($request, $response);
+            try {
+                $this->cacher->cachePage($request, $response);
+            } catch (\Exception $e) {
+                \Log::error("Failed to cache page '{$this->cacher->getUrl($request)}': " . $e->getMessage());
+            }
         }
 
         return $response;
