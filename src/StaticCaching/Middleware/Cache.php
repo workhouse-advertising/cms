@@ -3,6 +3,7 @@
 namespace Statamic\StaticCaching\Middleware;
 
 use Closure;
+use ErrorException;
 use Statamic\Statamic;
 use Statamic\StaticCaching\Cacher;
 
@@ -36,7 +37,7 @@ class Cache
         if ($this->shouldBeCached($request, $response)) {
             try {
                 $this->cacher->cachePage($request, $response);
-            } catch (\Exception $e) {
+            } catch (ErrorException $e) {
                 \Log::error("Failed to cache page '{$this->cacher->getUrl($request)}': " . $e->getMessage());
             }
         }
