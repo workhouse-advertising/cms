@@ -4,7 +4,7 @@
         <div
             v-if="hasPendingDynamicFolder"
             class="py-3 px-4 text-sm w-full rounded-md border border-dashed text-gray-700 dark:text-dark-175 dark:border-dark-200"
-            v-html="__('statamic::fieldtypes.assets.dynamic_folder_pending', {field: `<code>${config.dynamic}</code>`})"
+            v-html="pendingText"
         />
 
         <uploader
@@ -25,7 +25,7 @@
 
                 <div
                     v-if="!isReadOnly && showPicker"
-                    class="assets-fieldtype-picker space-x-4"
+                    class="assets-fieldtype-picker gap-x-4 gap-y-2"
                     :class="{
                         'is-expanded': expanded,
                         'bard-drag-handle': isInBardField
@@ -438,6 +438,23 @@ export default {
             return ! this.hasPendingDynamicFolder;
         },
 
+        pendingText() {
+            return this.config.dynamic === 'id'
+                ? __('statamic::fieldtypes.assets.dynamic_folder_pending_save')
+                : __('statamic::fieldtypes.assets.dynamic_folder_pending_field', {field: `<code>${this.config.dynamic}</code>`});
+        },
+
+        internalFieldActions() {
+            return [
+                {
+                    title: __('Remove All'),
+                    dangerous: true,
+                    run: this.removeAll,
+                    visible: this.assets.length > 0,
+                },
+            ];
+        },
+
     },
 
     events: {
@@ -524,6 +541,13 @@ export default {
         assetRemoved(asset) {
             const index = _(this.assets).findIndex({ id: asset.id });
             this.assets.splice(index, 1);
+        },
+
+        /**
+         * Remove all assets from the field.
+         */
+        removeAll() {
+            this.assets = [];
         },
 
         /**
