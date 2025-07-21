@@ -738,6 +738,10 @@ class CoreModifiers extends Modifier
             return Arr::first($value);
         }
 
+        if ($value instanceof Collection) {
+            return $value->first();
+        }
+
         return Stringy::first($value, Arr::get($params, 0));
     }
 
@@ -2116,6 +2120,24 @@ class CoreModifiers extends Modifier
     public function replace($value, $params)
     {
         return Stringy::replace($value, Arr::get($params, 0), Arr::get($params, 1));
+    }
+
+    /**
+     * Resolves a specific index or all items from an array, a Collection, or a Query Builder.
+     */
+    public function resolve($value, $params)
+    {
+        $key = Arr::get($params, 0);
+
+        if (Compare::isQueryBuilder($value)) {
+            $value = $value->get();
+        }
+
+        if ($value instanceof Collection) {
+            $value = $value->all();
+        }
+
+        return Arr::get($value, $key);
     }
 
     /**
